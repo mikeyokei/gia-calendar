@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        customBg: '#DFDFDB'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'TDC-Monolinear-Hairline';
+            src: url('assets/fonts/TDC-Monolinear-Hairline.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        @font-face {
+            font-family: 'Aethon';
+            src: url('assets/fonts/Aethon-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Aethon', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+            background-color: #DFDFDB;
+        }
+        
+        .dark body {
+            background-color: #121212;
+        }
+        
+        .display-font {
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+        
+        .calendar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .calendar-title {
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .calendar-nav-btn {
+            background-color: transparent;
+            border: none;
+            color: #000;
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dark .calendar-nav-btn {
+            color: #fff;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .calendar-weekday {
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            text-align: center;
+            padding: 0.5rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .calendar-day {
+            min-height: 100px;
+            background-color: #e9e9e9;
+            padding: 0.5rem;
+            text-align: right;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .dark .calendar-day {
+            background-color: #2a2a2a;
+            color: white;
+        }
+        
+        .calendar-day-header {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+        
+        .calendar-day.inactive {
+            opacity: 0.4;
+        }
+        
+        .calendar-day.today {
+            background-color: #d0d0d0;
+        }
+        
+        .dark .calendar-day.today {
+            background-color: #333;
+        }
+        
+        .event {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.25rem;
+            border-left: 2px solid;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .event:hover {
+            opacity: 0.8;
+        }
+        
+        .event.birthday {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-left-color: #000;
+        }
+        
+        .dark .event.birthday {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left-color: #fff;
+        }
+        
+        .event.death {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-left-color: #777;
+        }
+        
+        .dark .event.death {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left-color: #999;
+        }
+        
+        .event.custom {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-left-color: #555;
+        }
+        
+        .dark .event.custom {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left-color: #aaa;
+        }
+        
+        .upcoming-events {
+            margin-top: 3rem;
+        }
+        
+        .upcoming-title {
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .events-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .event-card {
+            padding: 1rem;
+            background-color: #e9e9e9;
+            transition: all 0.2s ease;
+        }
+        
+        .dark .event-card {
+            background-color: #2a2a2a;
+            color: white;
+        }
+        
+        .event-date {
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .event-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .event-person {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            z-index: 1001;
+            max-width: 90%;
+            width: 500px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .dark .modal {
+            background-color: #222;
+            color: white;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        
+        .modal-content {
+            margin-bottom: 1.5rem;
+            font-family: 'Aethon', sans-serif;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        button {
+            background-color: #000;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            font-family: 'Aethon', sans-serif;
+        }
+        
+        .dark button {
+            background-color: #fff;
+            color: #000;
+        }
+        
+        button:hover:not(:disabled) {
+            opacity: 0.8;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        input, select, textarea {
+            background-color: #f5f5f5;
+            color: #000;
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            width: 100%;
+            font-size: 16px;
+            font-family: 'Aethon', sans-serif;
+        }
+        
+        .dark input, .dark select, .dark textarea {
+            background-color: #333;
+            color: white;
+            border: 1px solid #444;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #000;
+        }
+        
+        .dark input:focus, .dark select:focus, .dark textarea:focus {
+            border-color: #fff;
+        }
+        
+        .import-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s ease;
+        }
+        
+        .dark .import-btn {
+            background-color: #fff;
+            color: #000;
+        }
+        
+        .add-event-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s ease;
+        }
+        
+        .dark .add-event-btn {
+            background-color: #fff;
+            color: #000;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .tab-container {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-family: 'TDC-Monolinear-Hairline', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid #000;
+            font-weight: bold;
+        }
+        
+        .dark .tab.active {
+            border-bottom: 2px solid #fff;
+        }
+        
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            
+            .calendar-weekday {
+                display: none;
+            }
+            
+            .calendar-day {
+                min-height: auto;
+                margin-bottom: 0.5rem;
+            }
+            
+            .calendar-title {
+                font-size: 1.5rem;
+            }
+            
+            .events-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <h1 class="calendar-title display-font">FAMILY CALENDAR</h1>
+            <div class="calendar-nav">
+                <button class="calendar-nav-btn" id="prevBtn">&#8592;</button>
+                <span id="currentDate" class="display-font">JANUARY 2024</span>
+                <button class="calendar-nav-btn" id="nextBtn">&#8594;</button>
+            </div>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab active" data-view="month">MONTH</div>
+            <div class="tab" data-view="list">LIST</div>
+        </div>
+        
+        <div id="monthView">
+            <div class="calendar-grid" id="weekdays">
+                <div class="calendar-weekday">Sunday</div>
+                <div class="calendar-weekday">Monday</div>
+                <div class="calendar-weekday">Tuesday</div>
+                <div class="calendar-weekday">Wednesday</div>
+                <div class="calendar-weekday">Thursday</div>
+                <div class="calendar-weekday">Friday</div>
+                <div class="calendar-weekday">Saturday</div>
+            </div>
+            
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar days will be generated here -->
+            </div>
+        </div>
+        
+        <div id="listView" style="display: none;">
+            <div class="upcoming-events">
+                <h2 class="upcoming-title display-font">UPCOMING EVENTS</h2>
+                <div class="events-list" id="eventsList">
+                    <!-- Event cards will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Data Button -->
+    <div class="import-btn" id="importBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+    </div>
+    
+    <!-- Add Event Button -->
+    <div class="add-event-btn" id="addEventBtn">
+        +
+    </div>
+    
+    <!-- Import Data Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-title display-font">IMPORT FAMILY DATA</div>
+        <div class="modal-content">
+            <p class="mb-4">Import data from your family tree to populate the calendar with birthdays and other important dates.</p>
+            
+            <div class="form-group">
+                <label for="familyDataInput">Paste your family tree data here:</label>
+                <textarea id="familyDataInput" rows="8" placeholder="Paste JSON data from your family tree"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <p class="text-sm opacity-70 mb-2">Or upload a file:</p>
+                <input type="file" id="familyDataFile" accept=".json">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="importCancelBtn">Cancel</button>
+            <button id="importConfirmBtn">Import</button>
+        </div>
+    </div>
+    
+    <!-- Add Event Modal -->
+    <div class="modal" id="addEventModal">
+        <div class="modal-title display-font">ADD EVENT</div>
+        <div class="modal-content">
+            <div class="form-group">
+                <label for="eventTitle">Event Title</label>
+                <input type="text" id="eventTitle" placeholder="Enter event title">
+            </div>
+            
+            <div class="form-group">
+                <label for="eventDate">Date</label>
+                <input type="date" id="eventDate">
+            </div>
+            
+            <div class="form-group">
+                <label for="eventType">Event Type</label>
+                <select id="eventType">
+                    <option value="birthday">Birthday</option>
+                    <option value="death">Death Anniversary</option>
+                    <option value="custom">Custom Event</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="eventPerson">Related Person</label>
+                <select id="eventPerson">
+                    <option value="">-- Select a person --</option>
+                    <!-- People will be populated from family data -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="eventNotes">Notes</label>
+                <textarea id="eventNotes" rows="3" placeholder="Additional notes"></textarea>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="addEventCancelBtn">Cancel</button>
+            <button id="addEventConfirmBtn">Add Event</button>
+        </div>
+    </div>
+    
+    <!-- Event Details Modal -->
+    <div class="modal" id="eventDetailsModal">
+        <div class="modal-title display-font" id="eventDetailsTitle">EVENT DETAILS</div>
+        <div class="modal-content" id="eventDetailsContent">
+            <!-- Event details will be displayed here -->
+        </div>
+        <div class="modal-actions">
+            <button id="deleteEventBtn">Delete</button>
+            <button id="closeEventDetailsBtn">Close</button>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <script>
+        // Check for dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // DOM Elements
+        const calendarGrid = document.getElementById('calendarGrid');
+        const monthView = document.getElementById('monthView');
+        const listView = document.getElementById('listView');
+        const eventsList = document.getElementById('eventsList');
+        const currentDateDisplay = document.getElementById('currentDate');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const tabs = document.querySelectorAll('.tab');
+        
+        const importBtn = document.getElementById('importBtn');
+        const importModal = document.getElementById('importModal');
+        const importCancelBtn = document.getElementById('importCancelBtn');
+        const importConfirmBtn = document.getElementById('importConfirmBtn');
+        const familyDataInput = document.getElementById('familyDataInput');
+        const familyDataFile = document.getElementById('familyDataFile');
+        
+        const addEventBtn = document.getElementById('addEventBtn');
+        const addEventModal = document.getElementById('addEventModal');
+        const addEventCancelBtn = document.getElementById('addEventCancelBtn');
+        const addEventConfirmBtn = document.getElementById('addEventConfirmBtn');
+        const eventPersonSelect = document.getElementById('eventPerson');
+        
+        const eventDetailsModal = document.getElementById('eventDetailsModal');
+        const eventDetailsTitle = document.getElementById('eventDetailsTitle');
+        const eventDetailsContent = document.getElementById('eventDetailsContent');
+        const deleteEventBtn = document.getElementById('deleteEventBtn');
+        const closeEventDetailsBtn = document.getElementById('closeEventDetailsBtn');
+        
+        const overlay = document.getElementById('overlay');
+        
+        // Data structures
+        let currentDate = new Date();
+        let people = {}; // Will be populated from family tree data
+        let events = []; // Will store all events
+        let selectedEventId = null;
+        
+        // Initialize with some sample events
+        const sampleEvents = [
+            {
+                id: '1',
+                title: 'Birthday',
+                date: new Date(currentDate.getFullYear(), 0, 15), // January 15
+                type: 'birthday',
+                person: 'parent1',
+                personName: 'Parent 1',
+                notes: 'Annual birthday celebration'
+            },
+            {
+                id: '2',
+                title: 'Anniversary',
+                date: new Date(currentDate.getFullYear(), 1, 22), // February 22
+                type: 'custom',
+                person: 'parent1',
+                personName: 'Parent 1',
+                notes: 'Wedding anniversary'
+            },
+            {
+                id: '3',
+                title: 'Memorial',
+                date: new Date(currentDate.getFullYear(), 7, 10), // August 10
+                type: 'death',
+                person: 'grandparent1',
+                personName: 'Grandparent 1',
+                notes: 'Annual remembrance'
+            },
+            {
+                id: '4',
+                title: 'Family Reunion',
+                date: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 5), // 5 days from now
+                type: 'custom',
+                person: '',
+                personName: 'Everyone',
+                notes: 'Annual family gathering'
+            },
+            {
+                id: '5',
+                title: 'Birthday',
+                date: new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 2), // 2 days from now
+                type: 'birthday',
+                person: 'you',
+                personName: 'You',
+                notes: ''
+            }
+        ];
+        
+        events = sampleEvents;
+        
+        // Sample people data
+        people = {
+            "parent1": {
+                id: "parent1",
+                name: "PARENT 1",
+                birthYear: 1970,
+                deathYear: null,
+                gender: "male"
+            },
+            "parent2": {
+                id: "parent2",
+                name: "PARENT 2",
+                birthYear: 1972,
+                deathYear: null,
+                gender: "female"
+            },
+            "you": {
+                id: "you",
+                name: "YOU",
+                birthYear: 1995,
+                deathYear: null,
+                gender: "male"
+            },
+            "grandparent1": {
+                id: "grandparent1",
+                name: "GRANDPARENT 1",
+                birthYear: 1945,
+                deathYear: 2010,
+                gender: "male"
+            }
+        };
+        
+        // Populate the person dropdown
+        populatePersonDropdown();
+        
+        // Calendar functionality
+        function generateCalendar(date) {
+            calendarGrid.innerHTML = '';
+            
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            
+            // Set the month and year in the header
+            currentDateDisplay.textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
+            
+            // Get the first day of the month and the number of days in the month
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Get the last day of the previous month
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            // Generate the grid cells
+            
+            // Previous month days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const dayNumber = daysInPrevMonth - i;
+                const dayCell = createDayCell(new Date(year, month - 1, dayNumber), true);
+                calendarGrid.appendChild(dayCell);
+            }
+            
+            // Current month days
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayCell = createDayCell(new Date(year, month, i), false);
+                calendarGrid.appendChild(dayCell);
+            }
+            
+            // Next month days (to fill the grid)
+            const totalCells = 42; // 6 rows of 7 days
+            const remainingCells = totalCells - (firstDay + daysInMonth);
+            
+            for (let i = 1; i <= remainingCells; i++) {
+                const dayCell = createDayCell(new Date(year, month + 1, i), true);
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+        
+        function createDayCell(date, inactive) {
+            const cell = document.createElement('div');
+            cell.className = `calendar-day ${inactive ? 'inactive' : ''}`;
+            
+            // Check if this day is today
+            const today = new Date();
+            if (date.getDate() === today.getDate() && 
+                date.getMonth() === today.getMonth() && 
+                date.getFullYear() === today.getFullYear()) {
+                cell.classList.add('today');
+            }
+            
+            // Add date number
+            const dateNumber = document.createElement('div');
+            dateNumber.className = 'calendar-day-header';
+            dateNumber.textContent = date.getDate();
+            cell.appendChild(dateNumber);
+            
+            // Add events for this day
+            const dayEvents = getEventsForDate(date);
+            dayEvents.forEach(event => {
+                const eventEl = document.createElement('div');
+                eventEl.className = `event ${event.type}`;
+                eventEl.textContent = event.title;
+                eventEl.dataset.eventId = event.id;
+                
+                eventEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showEventDetails(event.id);
+                });
+                
+                cell.appendChild(eventEl);
+            });
+            
+            return cell;
+        }
+        
+        function getEventsForDate(date) {
+            return events.filter(event => {
+                return event.date.getDate() === date.getDate() && 
+                       event.date.getMonth() === date.getMonth() && 
+                       event.date.getFullYear() === date.getFullYear();
+            });
+        }
+        
+        // View switching functionality
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const view = tab.dataset.view;
+                if (view === 'month') {
+                    monthView.style.display = 'block';
+                    listView.style.display = 'none';
+                } else if (view === 'list') {
+                    monthView.style.display = 'none';
+                    listView.style.display = 'block';
+                    generateEventsList();
+                }
+            });
+        });
+        
+        function generateEventsList() {
+            eventsList.innerHTML = '';
+            
+            // Sort events by date, nearest first
+            const sortedEvents = [...events].sort((a, b) => a.date - b.date);
+            
+            // Only show upcoming events (or events from today)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const upcomingEvents = sortedEvents.filter(event => {
+                const eventDate = new Date(event.date);
+                eventDate.setFullYear(today.getFullYear()); // Consider annual recurrence for birthdays/anniversaries
+                return eventDate >= today;
+            });
+            
+            if (upcomingEvents.length === 0) {
+                const noEvents = document.createElement('p');
+                noEvents.textContent = 'No upcoming events.';
+                eventsList.appendChild(noEvents);
+                return;
+            }
+            
+            upcomingEvents.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = 'event-card';
+                eventCard.dataset.eventId = event.id;
+                
+                const eventDate = document.createElement('div');
+                eventDate.className = 'event-date';
+                
+                // Format date in a readable format
+                const options = { weekday: 'short', month: 'long', day: 'numeric' };
+                eventDate.textContent = event.date.toLocaleDateString('en-US', options).toUpperCase();
+                
+                const eventTitle = document.createElement('div');
+                eventTitle.className = 'event-title';
+                eventTitle.textContent = event.title;
+                
+                const eventPerson = document.createElement('div');
+                eventPerson.className = 'event-person';
+                eventPerson.textContent = event.personName || '';
+                
+                eventCard.appendChild(eventDate);
+                eventCard.appendChild(eventTitle);
+                eventCard.appendChild(eventPerson);
+                
+                eventCard.addEventListener('click', () => {
+                    showEventDetails(event.id);
+                });
+                
+                eventsList.appendChild(eventCard);
+            });
+        }
+        
+        // Modal functionality
+        function showModal(modal) {
+            modal.classList.add('active');
+            overlay.classList.add('active');
+        }
+        
+        function hideModal(modal) {
+            modal.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+        
+        // Import data functionality
+        importBtn.addEventListener('click', () => {
+            showModal(importModal);
+        });
+        
+        importCancelBtn.addEventListener('click', () => {
+            hideModal(importModal);
+        });
+        
+        importConfirmBtn.addEventListener('click', () => {
+            const jsonData = familyDataInput.value.trim();
+            
+            if (jsonData) {
+                try {
+                    const data = JSON.parse(jsonData);
+                    processImportedData(data);
+                    hideModal(importModal);
+                } catch (e) {
+                    alert('Invalid JSON data. Please check the format and try again.');
+                }
+            } else if (familyDataFile.files.length > 0) {
+                const file = familyDataFile.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        processImportedData(data);
+                        hideModal(importModal);
+                    } catch (error) {
+                        alert('Invalid JSON file. Please check the format and try again.');
+                    }
+                };
+                
+                reader.readAsText(file);
+            } else {
+                alert('Please paste JSON data or select a file to import.');
+            }
+        });
+        
+        function processImportedData(data) {
+            // Update people data
+            if (data.people) {
+                people = data.people;
+                
+                // Populate the person dropdown
+                populatePersonDropdown();
+                
+                // Generate or update events based on the imported data
+                generateEventsFromPeople();
+                
+                // Refresh the calendar
+                generateCalendar(currentDate);
+            }
+        }
+        
+        function generateEventsFromPeople() {
+            const newEvents = [];
+            
+            // Keep existing custom events
+            const customEvents = events.filter(event => event.type === 'custom');
+            newEvents.push(...customEvents);
+            
+            // Create birthday events for each person with a birth year
+            Object.values(people).forEach(person => {
+                if (person.birthYear) {
+                    // Calculate this year's birthday
+                    const today = new Date();
+                    const birthMonth = 0; // Default to January if unknown
+                    const birthDay = 1;   // Default to 1st if unknown
+                    
+                    const birthdayEvent = {
+                        id: 'birthday_' + person.id,
+                        title: 'Birthday',
+                        date: new Date(today.getFullYear(), birthMonth, birthDay),
+                        type: 'birthday',
+                        person: person.id,
+                        personName: person.name,
+                        notes: `${person.name}'s birthday`
+                    };
+                    
+                    newEvents.push(birthdayEvent);
+                }
+                
+                // Create death anniversary events for each person with a death year
+                if (person.deathYear) {
+                    const today = new Date();
+                    const deathMonth = 0; // Default to January if unknown
+                    const deathDay = 1;   // Default to 1st if unknown
+                    
+                    const deathEvent = {
+                        id: 'death_' + person.id,
+                        title: 'Death Anniversary',
+                        date: new Date(today.getFullYear(), deathMonth, deathDay),
+                        type: 'death',
+                        person: person.id,
+                        personName: person.name,
+                        notes: `Anniversary of ${person.name}'s passing`
+                    };
+                    
+                    newEvents.push(deathEvent);
+                }
+            });
+            
+            events = newEvents;
+        }
+        
+        function populatePersonDropdown() {
+            // Clear existing options
+            eventPersonSelect.innerHTML = '<option value="">-- Select a person --</option>';
+            
+            // Add an option for each person
+            Object.values(people).forEach(person => {
+                const option = document.createElement('option');
+                option.value = person.id;
+                option.textContent = person.name;
+                eventPersonSelect.appendChild(option);
+            });
+        }
+        
+        // Add event functionality
+        addEventBtn.addEventListener('click', () => {
+            // Reset form
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDate').valueAsDate = new Date();
+            document.getElementById('eventType').value = 'custom';
+            document.getElementById('eventPerson').value = '';
+            document.getElementById('eventNotes').value = '';
+            
+            showModal(addEventModal);
+        });
+        
+        addEventCancelBtn.addEventListener('click', () => {
+            hideModal(addEventModal);
+        });
+        
+        addEventConfirmBtn.addEventListener('click', () => {
+            const title = document.getElementById('eventTitle').value.trim();
+            const date = document.getElementById('eventDate').valueAsDate;
+            const type = document.getElementById('eventType').value;
+            const personId = document.getElementById('eventPerson').value;
+            const notes = document.getElementById('eventNotes').value.trim();
+            
+            if (!title || !date) {
+                alert('Please enter a title and date for the event.');
+                return;
+            }
+            
+            const newEvent = {
+                id: 'event_' + Date.now(),
+                title: title,
+                date: date,
+                type: type,
+                person: personId,
+                personName: personId ? people[personId].name : '',
+                notes: notes
+            };
+            
+            events.push(newEvent);
+            
+            hideModal(addEventModal);
+            
+            // Refresh the calendar
+            generateCalendar(currentDate);
+            
+            // Update the list view if it's active
+            if (document.querySelector('.tab[data-view="list"]').classList.contains('active')) {
+                generateEventsList();
+            }
+        });
+        
+        // Event details functionality
+        function showEventDetails(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+            
+            selectedEventId = eventId;
+            
+            eventDetailsTitle.textContent = event.title.toUpperCase();
+            
+            // Format date
+            const formattedDate = event.date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            let detailsHtml = `
+                <div class="mb-4">
+                    <strong>Date:</strong> ${formattedDate}
+                </div>
+                <div class="mb-4">
+                    <strong>Type:</strong> ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                </div>
+            `;
+            
+            if (event.personName) {
+                detailsHtml += `
+                    <div class="mb-4">
+                        <strong>Person:</strong> ${event.personName}
+                    </div>
+                `;
+            }
+            
+            if (event.notes) {
+                detailsHtml += `
+                    <div class="mb-4">
+                        <strong>Notes:</strong> ${event.notes}
+                    </div>
+                `;
+            }
+            
+            eventDetailsContent.innerHTML = detailsHtml;
+            
+            showModal(eventDetailsModal);
+        }
+        
+        closeEventDetailsBtn.addEventListener('click', () => {
+            hideModal(eventDetailsModal);
+            selectedEventId = null;
+        });
+        
+        deleteEventBtn.addEventListener('click', () => {
+            if (selectedEventId) {
+                events = events.filter(event => event.id !== selectedEventId);
+                hideModal(eventDetailsModal);
+                
+                // Refresh the view
+                generateCalendar(currentDate);
+                
+                if (document.querySelector('.tab[data-view="list"]').classList.contains('active')) {
+                    generateEventsList();
+                }
+            }
+        });
+        
+        // Navigation functionality
+        prevBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar(currentDate);
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar(currentDate);
+        });
+        
+        // Close modals when clicking overlay
+        overlay.addEventListener('click', () => {
+            hideModal(importModal);
+            hideModal(addEventModal);
+            hideModal(eventDetailsModal);
+        });
+        
+        // Initialize calendar
+        generateCalendar(currentDate);
+    </script>
+</body>
+</html>
